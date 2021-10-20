@@ -18,6 +18,22 @@
 #include "rgb_matrix_user.h"
 #include "keymap_user.h"
 
+#ifdef RAW_ENABLE
+#    include "qmk_rc.h"
+#    define MY_RGB_MATRIX_SETRGB_RANGE 128
+#    define MY_RGB_MATRIX_CLEAR 129
+
+typedef struct {
+  uint8_t red;
+  uint8_t green;
+  uint8_t blue;
+  uint8_t led_min;
+  uint8_t led_max;
+  bool is_set;
+} my_rgb_range_t;
+my_rgb_range_t my_rgb_range;
+#endif // RAW_ENABLE
+
 keypos_t led_index_key_position[DRIVER_LED_TOTAL];
 
 void rgb_matrix_init_user(void) {
@@ -31,11 +47,40 @@ void rgb_matrix_init_user(void) {
     }
 }
 
+#ifdef RAW_ENABLE
+void qmk_rc_process_command_user(qmk_rc_command_t* command) {
+  switch (command->id) {
+    case MY_RGB_MATRIX_SETRGB_RANGE:
+        my_rgb_range.red     = command->data[0];
+        my_rgb_range.green   = command->data[1];
+        my_rgb_range.blue    = command->data[2];
+        my_rgb_range.led_min = command->data[3];
+        my_rgb_range.led_max = command->data[4];
+        my_rgb_range.is_set  = true;
+        break;
+    case MY_RGB_MATRIX_CLEAR:
+        my_rgb_range.red     = 0;
+        my_rgb_range.green   = 0;
+        my_rgb_range.blue    = 0;
+        my_rgb_range.led_min = 0;
+        my_rgb_range.led_max = 0;
+        my_rgb_range.is_set  = false;
+        break;
+  }
+}
+
+#endif // RAW_ENABLE
+
 void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     uint8_t current_layer = get_highest_layer(layer_state);
     switch (current_layer) {
         case MAC_BASE:
         case WIN_BASE:
+            if (my_rgb_range.is_set) {
+                for (int i = my_rgb_range.led_min; i <= my_rgb_range.led_max; i++) {
+                    rgb_matrix_set_color(i, my_rgb_range.red, my_rgb_range.green, my_rgb_range.blue);
+                }
+            }
 #ifdef CAPS_LOCK_INDICATOR_COLOR
             if (host_keyboard_led_state().caps_lock) {
                 rgb_matrix_set_color_by_keycode(led_min, led_max, current_layer, is_caps_lock_indicator, CAPS_LOCK_INDICATOR_COLOR);
