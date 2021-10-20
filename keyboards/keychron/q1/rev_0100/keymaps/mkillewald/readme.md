@@ -1,4 +1,4 @@
-## mkillewald's Keychron Q1 keymap (ANSI rev_0100) v1.0.4
+## mkillewald's Keychron Q1 keymap (ANSI rev_0100) development branch
 
 This keymap builds on the keymap by Grayson Carr (gtg465x) but adds a couple options.
 
